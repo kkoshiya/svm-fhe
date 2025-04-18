@@ -1,20 +1,17 @@
 [toolchain]
-package_manager = "Yarn"
 
 [features]
 resolution = true
 skip-lint = false
 
 [programs.localnet]
-blockchain = "GEFoAn6CNJiG9dq8xgm24fjzjip7n5GcH5AyqVC6QzdD"
-# operations = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-
+blockchain = "5o9mxoRiUCtdd2JLvJGNoT5256mYBxEgG842b4M8pZDv"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

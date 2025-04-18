@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use blockchain::program::Blockchain;  // Import main program
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");  // Your program ID
+declare_id!("7xpSX3HvqvTN7zVPZEm4WkeLpq5Trj9USRuH6vsYiJaz");  // Your program ID
 
 #[program]
 pub mod operations {

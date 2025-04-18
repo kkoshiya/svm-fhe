@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("GEFoAn6CNJiG9dq8xgm24fjzjip7n5GcH5AyqVC6QzdD");
+declare_id!("5o9mxoRiUCtdd2JLvJGNoT5256mYBxEgG842b4M8pZDv");
 
 // Helper function for generating ciphertexts
 fn generate_ciphertext(clock: &Clock) -> [u8; 32] {
@@ -71,10 +71,10 @@ pub mod blockchain {
         Ok(())
     }
 
-    pub fn encrypt8(ctx: Context<Encrypt8>, key: [u8; 32]) -> Result<()> {
+    // pub fn encrypt8(ctx: Context<Encrypt8>, key: [u8; 32]) -> Result<()> {
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     pub fn transfer(ctx: Context<Transfer>, amount: [u8; 32], recipient: Pubkey) -> Result<()> {
         // Emit both sender's and recipient's ciphertext values

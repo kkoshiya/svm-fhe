@@ -1,7 +1,7 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import { insertZero, encrypt, transfer } from './fhe';
+import { insertZero, encrypt, transfer, fhe8add } from './fhe';
 
-const PROGRAM_ID = new PublicKey("GEFoAn6CNJiG9dq8xgm24fjzjip7n5GcH5AyqVC6QzdD");
+const PROGRAM_ID = new PublicKey("5o9mxoRiUCtdd2JLvJGNoT5256mYBxEgG842b4M8pZDv");
 
 async function startListener() {
     // Create connection
@@ -36,6 +36,11 @@ async function startListener() {
                 const transferLog = logInfo.logs.find(log => 
                     log.includes("Transferring")
                 );
+
+                // FHE 8-bit add event detection
+                const fheAddLhsLog = logInfo.logs.find(log => log.includes("FHE Add - LHS:"));
+                const fheAddRhsLog = logInfo.logs.find(log => log.includes("FHE Add - RHS:"));
+                const fheAddResultLog = logInfo.logs.find(log => log.includes("FHE addition result:"));
 
                 if (depositLog && depositInfoLog) {
                     console.log('=== Deposit Detected ===');
@@ -72,6 +77,24 @@ async function startListener() {
                     console.log('Sender Ciphertext:', senderCiphertext);
                     console.log('Recipient Ciphertext:', recipientCiphertext);
                     console.log('Transfer Amount Ciphertext:', transferCiphertext);
+                }
+
+                if (fheAddLhsLog && fheAddRhsLog && fheAddResultLog) {
+                    console.log('=== FHE 8-bit Add Detected ===');
+
+                    const lhsArray = fheAddLhsLog.split("FHE Add - LHS:")[1].trim().replace(/\[|\]/g, '');
+                    const rhsArray = fheAddRhsLog.split("FHE Add - RHS:")[1].trim().replace(/\[|\]/g, '');
+                    const resultArray = fheAddResultLog.split("FHE addition result:")[1].trim().replace(/\[|\]/g, '');
+                    
+                    const lhs = JSON.parse(`[${lhsArray}]`);
+                    console.log('LHS:', lhs);
+                    const rhs = JSON.parse(`[${rhsArray}]`);
+                    console.log('RHS:', rhs);
+                    const result = JSON.parse(`[${resultArray}]`);
+                    console.log('RHS:', result);
+
+                    await fhe8add(lhs, rhs, result);
+                    console.log('Encrypted LHS and RHS for FHE 8-bit add');
                 }
             }
         },

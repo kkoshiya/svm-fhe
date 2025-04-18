@@ -75,3 +75,31 @@ export const transfer = async (senderCiphertext: any, recipientCiphertext: any, 
     }
 };
 
+export const fhe8add = async (lhs_key: any, rhs_key: any, result_key: any) => {
+    const request = {
+        lhs_key: lhs_key,
+        rhs_key: rhs_key,
+        result_key: result_key,
+    };
+
+    try {
+        console.log('Sending fhe8 add request:', JSON.stringify(request, null, 2));
+        const response = await fetch('http://localhost:3000/fhe8add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(request)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+        }
+
+        console.log('Successfully processed fhe 8 add');
+    } catch (error) {
+        console.error('Detailed fhe 8 add error:', error);
+        throw error;
+    }
+};

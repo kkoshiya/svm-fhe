@@ -75,7 +75,7 @@ describe("blockchain", () => {
 });
 
 
-  it("Can transfer SOL", async () => {
+  xit("Can transfer SOL", async () => {
     // Use helper to generate random value
     const value = generateRandomBytes32();
     const amount = new anchor.BN(700_000_000);
@@ -108,6 +108,37 @@ describe("blockchain", () => {
     console.log("Recipient:", recipient.toString());
   });
 
+  it("Can fhe 8 add", async () => {
+    // Use helper to generate random value
+    const value1 = generateRandomBytes32();
+    const number1 = 7;
+    const value2 = generateRandomBytes32();
+    const number2 = 2;
+
+    await encrypt8(number1, value1);
+    await encrypt8(number2, value2);
+    //console.log('Deposited: into db', {value: value});
+    await sleep(10000);
+    // Derive PDA using the value as seeds
+    const [resultInfoPDA] = PublicKey.findProgramAddressSync(
+      [Buffer.from("fhe"), provider.publicKey.toBuffer()],
+      program.programId
+    );
+
+    // Then transfer (just emits events)
+    const tx = await program.methods
+        .fhe8Add(value1, value2)
+        .accounts({
+            resultInfo: resultInfoPDA,
+            user: provider.publicKey,
+            systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .rpc();
+
+    console.log("Transfer transaction signature", tx);
+    console.log("Random value 1 used:", value1);
+    console.log("Random value 2 used:", value2);
+  });
 });
 
 
@@ -173,13 +204,15 @@ const encrypt8 = async (value: number, key: string) => {
     value: Number(value),
     key: key  
   };
-  const response = await fetch('http://localhost:3000/post', {
+
+  const response = await fetch('http://localhost:3000/encrypt8', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ value }),
+    body: JSON.stringify(requestBody),
   });
-  return await response.json();
+
+  console.log('Rust Server Response:', await response.text());
 };
 

@@ -4,6 +4,7 @@ use axum::{
     http::StatusCode,
 };
 use tfhe::{
+    FheUint8,
     FheUint64,
     CompressedCiphertextListBuilder,
     set_server_key,
@@ -23,7 +24,6 @@ use crate::{
         zero_key,
     },
 };
-
 
 pub async fn handle_post(State(state): State<AppState>, Json(payload): Json<Request>) -> Result<StatusCode, StatusCode> {
     println!("Received value: {}, key: {:?}", payload.value, payload.key);
@@ -46,6 +46,30 @@ pub async fn handle_post(State(state): State<AppState>, Json(payload): Json<Requ
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     println!("hit the end of post");
+    Ok(StatusCode::OK)
+}
+
+pub async fn handle_encrypt8(State(state): State<AppState>, Json(payload): Json<Request>) -> Result<StatusCode, StatusCode> {
+    println!("Received value: {}, key: {:?}", payload.value, payload.key);
+    let client_key = state.get_client_key();
+    let server_key = state.get_server_key();
+    set_server_key((*server_key).clone());
+    let value = FheUint8::encrypt(payload.value, &*client_key);
+    println!("Encrypted value type: {:?}", std::any::type_name_of_val(&value));
+    let compressed = CompressedCiphertextListBuilder::new()
+        .push(value)
+        .build()
+        .map_err(|e| {
+            println!("Compression error: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+    });
+    println!("Serializing compressed value...");
+    let serialized_data = bincode::serialize(&compressed.unwrap())
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    insert_ciphertext(payload.key, serialized_data)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    println!("hit the end of encrypt8");
     Ok(StatusCode::OK)
 }
 
@@ -158,4 +182,50 @@ Json(payload): Json<Withdraw>
 
     let decrypted: u64 = new_balance.decrypt(&client_key);
     Ok(Json(ViewResponse { result: decrypted }))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct Fhe8AddRequest {
+    pub lhs_key: [u8; 32],
+    pub rhs_key: [u8; 32],
+    pub result_key: [u8; 32],
+}
+
+pub async fn handle_fhe8_add(
+    State(state): State<AppState>, 
+    Json(payload): Json<Fhe8AddRequest>
+) -> Result<StatusCode, StatusCode> {
+    println!("=== FHE 8 ADD REQUEST RECEIVED ===");
+
+    let client_key = state.get_client_key();
+    let server_key = state.get_server_key();
+
+    set_server_key((*server_key).clone());
+
+    let lhs = operations::get_prepared_ciphertext_8(payload.lhs_key).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let rhs = operations::get_prepared_ciphertext_8(payload.rhs_key).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    // Downcast to FheUint8 if needed, or assume FheUint8
+    let result = &lhs + &rhs;
+    
+    let number1: u8 = lhs.decrypt(&client_key);
+    let number2: u8 = rhs.decrypt(&client_key);
+    let decrypted: u8 = result.decrypt(&client_key);
+    println!("Number 1 value: {}", number1);
+    println!("Number 2 value: {}", number2);
+    println!("Result value: {}", decrypted);
+    
+    let compressed = CompressedCiphertextListBuilder::new()
+        .push(result)
+        .build()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let serialized_data = bincode::serialize(&compressed)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    insert_ciphertext(payload.result_key, serialized_data)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    println!("Successfully prepared ciphertext");  // Confirm success
+
+    Ok(StatusCode::OK)
 }
